@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Garment Inspection System - Real-time cloth quality monitoring and sorting dashboard">
+    <title>Garment Inspection System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-ui">
+        <!-- ═══════════════════════ HEADER ═══════════════════════ -->
+        <div class="header">
+            <div class="title">Garment Inspection System</div>
+            <div class="header-controls">
+                <span class="operator">Operator: <strong id="operator-name">—</strong></span>
+                <span class="divider">|</span>
+                <select id="header-batch-select" class="batch-dropdown"></select>
+                <span class="current-time" id="clock-main"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ MAIN LAYOUT ══════════════════════ -->
+        <div class="main-layout">
+
+            <!-- ─────── LEFT COLUMN ─────── -->
+            <div class="col-left">
+
+                <!-- Current Status -->
+                <div class="panel" id="panel-status">
+                    <div class="panel-title">Current Status</div>
+                    <div class="status-grid">
+                        <span>Barcode</span>  <span class="colon">:</span> <strong class="white-text" id="s-barcode">—</strong>
+                        <span>Scan</span>     <span class="colon">:</span> <span id="s-scan">—</span>
+                        <span>Inspection</span><span class="colon">:</span> <span id="s-inspection">—</span>
+                        <span>Sorting</span>  <span class="colon">:</span> <span id="s-sorting">—</span>
+                        <span>Batch Type</span><span class="colon">:</span> <span id="s-batch">—</span>
+                    </div>
+                </div>
+
+                <!-- Production Summary -->
+                <div class="panel" id="panel-summary">
+                    <div class="panel-title">Production Summary</div>
+                    <div class="summary-grid">
+                        <span>Total Cloth</span>    <span id="sum-total">0</span>
+                        <span>Accepted Cloth</span> <span id="sum-accepted">0</span>
+                        <span>Efficiency</span>     <strong id="sum-efficiency">0.0%</strong>
+                    </div>
+                    <hr class="panel-hr">
+                    <div class="progress-info">
+                        <span>Batch Progress: <strong><span id="sum-inspected">0</span> / <span id="sum-total2">0</span></strong></span>
+                    </div>
+                    <div class="progress-info flex-between">
+                        <span>Batch Progress:</span> <strong id="sum-percent">0%</strong>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="sum-progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─────── RIGHT COLUMN ─────── -->
+            <div class="col-right">
+
+                <!-- Inspection Result -->
+                <div class="panel" id="panel-results">
+                    <div class="panel-header-flex">
+                        <div class="panel-title uppercase">INSPECTION RESULT</div>
+                        <div class="panel-time" id="clock-sub"></div>
+                    </div>
+                    <div class="results-cards">
+                        <!-- PASS card -->
+                        <div class="result-card">
+                            <div class="status-box pass-box">
+                                <div class="box-title" id="res-pass-label">GOOD CLOTH</div>
+                                <div class="box-result">PASS</div>
+                            </div>
+                            <div class="segment-bar-wrapper">
+                                <div class="segment-bar pass-bar">
+                                    <div class="segment-fill" id="res-pass-bar" style="width: 0%;"></div>
+                                </div>
+                                <span class="segment-text"><strong id="res-pass-count">0</strong> / <span id="res-pass-total">100</span></span>
+                            </div>
+                            <div class="dest-info">
+                                Sorting Destination: <strong id="res-pass-dest">Bin A</strong>
+                            </div>
+                            <div class="dest-info border-none">
+                                Efficiency: <strong id="res-pass-eff">0%</strong>
+                            </div>
+                        </div>
+
+                        <!-- REJECT card -->
+                        <div class="result-card border-left">
+                            <div class="status-box reject-box">
+                                <div class="box-title" id="res-rej-label">DEFECT CLOTH</div>
+                                <div class="box-result">REJECT</div>
+                            </div>
+                            <div class="segment-bar-wrapper">
+                                <div class="segment-bar reject-bar">
+                                    <div class="segment-fill" id="res-rej-bar" style="width: 0%;"></div>
+                                </div>
+                                <span class="segment-text"><strong id="res-rej-count">0</strong> / <span id="res-rej-total">100</span></span>
+                            </div>
+                            <div class="dest-info">
+                                Sorting Destination: <strong id="res-rej-dest">Reject Bin</strong>
+                            </div>
+                            <div class="dest-info border-none">
+                                Efficiency: <strong id="res-rej-eff">0%</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom split: table + alerts -->
+                <div class="bottom-split">
+
+                    <!-- Current Batch Table -->
+                    <div class="panel flex-2">
+                        <div class="panel-header-flex inline-title">
+                            <div class="panel-title margin-none">Current Batch:
+                                <select id="table-batch-select" class="inline-select"></select>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Barcode</th>
+                                        <th>Result</th>
+                                        <th>Bin</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Alerts -->
+                    <div class="panel flex-1 alert-panel">
+                        <div class="panel-title">Alerts</div>
+                        <ul class="alerts-list" id="alerts-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ FOOTER ═══════════════════════════ -->
+        <div class="footer-controls">
+            <button class="btn btn-primary" id="btn-start">Start Inspection</button>
+            <div class="right-buttons">
+                <button class="btn btn-secondary" id="btn-reset">Reset System</button>
+                <button class="btn btn-secondary" id="btn-export">Export Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
