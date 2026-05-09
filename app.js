@@ -485,10 +485,14 @@ function selectFabric(batchName, fabricName) {
   const countrySizes = (COUNTRY_SIZES[selectedCountry] || {})[fabricName] || {};
 
   Object.keys(countrySizes).forEach((size) => {
-    const btn = document.createElement('button');
-    btn.className = 'size-btn';
-    btn.textContent = size;
+    const spec = countrySizes[size];
+    const btn  = document.createElement('button');
+    btn.className    = 'size-btn';
     btn.dataset.size = size;
+    btn.innerHTML = `
+      <span class="size-lbl">${size}</span>
+      <span class="size-dims">${spec.length}×${spec.width} cm</span>
+    `;
     btn.addEventListener('click', () => selectSizeForFabric(countrySizes, size));
     sizeBtnRow.appendChild(btn);
   });
@@ -505,34 +509,117 @@ function selectSizeForFabric(sizes, size) {
 
   selectedSize = size;
 
-  document.querySelectorAll('#fabric-size-btn-row .size-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.size === size);
-  });
-
-  const detailBox = document.getElementById('size-detail-box');
-  if (detailBox) {
-    detailBox.style.display = 'flex';
-    detailBox.innerHTML = `
-      <div class="spec-cell">
-        <div class="spec-lbl">Length</div>
-        <div class="spec-val">${spec.length}<span class="spec-unit">cm</span></div>
-      </div>
-      <div class="spec-cell">
-        <div class="spec-lbl">Width</div>
-        <div class="spec-val">${spec.width}<span class="spec-unit">cm</span></div>
-      </div>
-      <div class="spec-cell">
-        <div class="spec-lbl">Breadth</div>
-        <div class="spec-val">${spec.breadth}<span class="spec-unit">cm</span></div>
-      </div>
-      <div class="spec-cell adj">
-        <div class="spec-lbl">Adjustable</div>
-        <div class="spec-val adj-val">${spec.adjustable}</div>
+  // Collapse size list into a chip (hide all buttons, show selected chip)
+  const sizeBtnRow = document.getElementById('fabric-size-btn-row');
+  if (sizeBtnRow) {
+    sizeBtnRow.innerHTML = `
+      <div class="size-chip" id="size-chip">
+        <span class="size-chip-label">${size}</span>
+        <span class="size-chip-dims">${spec.length}×${spec.width} cm</span>
+        <button class="fabric-change-btn" onclick="showSizeGrid()">✕ Change</button>
       </div>
     `;
   }
 
-  dom.btnStart.disabled = false;
+  // Also hide the step label
+  const step2Label = document.getElementById('step2-label');
+  if (step2Label) step2Label.style.display = 'none';
+
+  const detailBox = document.getElementById('size-detail-box');
+  if (detailBox) {
+    detailBox.style.display = 'block';
+    detailBox.innerHTML = `
+      <div class="unit-selector-row">
+        <span class="unit-label">Unit:</span>
+        <button class="unit-btn active" data-unit="cm" onclick="switchUnit('cm', ${spec.length}, ${spec.width}, ${spec.breadth})">cm</button>
+        <button class="unit-btn" data-unit="mm" onclick="switchUnit('mm', ${spec.length}, ${spec.width}, ${spec.breadth})">mm</button>
+      </div>
+      <div class="spec-row" id="spec-values-row">
+        <div class="spec-cell">
+          <div class="spec-lbl">Length</div>
+          <div class="spec-val" id="spec-length">${spec.length}<span class="spec-unit">cm</span></div>
+        </div>
+        <div class="spec-cell">
+          <div class="spec-lbl">Width</div>
+          <div class="spec-val" id="spec-width">${spec.width}<span class="spec-unit">cm</span></div>
+        </div>
+        <div class="spec-cell">
+          <div class="spec-lbl">Breadth</div>
+          <div class="spec-val" id="spec-breadth">${spec.breadth}<span class="spec-unit">cm</span></div>
+        </div>
+      </div>
+      <div class="adj-input-row">
+        <div class="adj-label">Adjustable</div>
+        <input type="number" class="adj-input" id="adj-value-input" placeholder="Enter value" min="0" step="0.1" />
+        <select class="adj-unit-sel" id="adj-unit-select">
+          <option value="cm">cm</option>
+          <option value="mm">mm</option>
+        </select>
+      </div>
+    `;
+
+    // Attach listener — enable Start only when adjustable value is entered
+    const adjInput = document.getElementById('adj-value-input');
+    if (adjInput) {
+      adjInput.addEventListener('input', () => {
+        dom.btnStart.disabled = !(adjInput.value.trim() !== '');
+      });
+    }
+  }
+
+  // Keep disabled until adjustable value is entered
+  dom.btnStart.disabled = true;
+}
+
+// Re-expand the size grid (called by "✕ Change" on size chip)
+function showSizeGrid() {
+  selectedSize = null;
+  dom.btnStart.disabled = true;
+
+  // Hide detail box
+  const detailBox = document.getElementById('size-detail-box');
+  if (detailBox) { detailBox.style.display = 'none'; detailBox.innerHTML = ''; }
+
+  // Show step label again
+  const step2Label = document.getElementById('step2-label');
+  if (step2Label) step2Label.style.display = '';
+
+  // Re-render size buttons
+  const fabricName = selectedFabric;
+  if (!fabricName || !selectedCountry) return;
+
+  const countrySizes = (COUNTRY_SIZES[selectedCountry] || {})[fabricName] || {};
+  const sizeBtnRow = document.getElementById('fabric-size-btn-row');
+  if (!sizeBtnRow) return;
+
+  sizeBtnRow.innerHTML = '';
+  Object.keys(countrySizes).forEach((size) => {
+    const spec = countrySizes[size];
+    const btn  = document.createElement('button');
+    btn.className    = 'size-btn';
+    btn.dataset.size = size;
+    btn.innerHTML = `
+      <span class="size-lbl">${size}</span>
+      <span class="size-dims">${spec.length}×${spec.width} cm</span>
+    `;
+    btn.addEventListener('click', () => selectSizeForFabric(countrySizes, size));
+    sizeBtnRow.appendChild(btn);
+  });
+}
+
+// Switch measurement unit (cm ↔ mm) for displayed specs
+function switchUnit(unit, lengthCm, widthCm, breadthCm) {
+  const factor = unit === 'mm' ? 10 : 1;
+  const suffix = unit;
+
+  document.getElementById('spec-length').innerHTML  = `${(lengthCm * factor).toFixed(unit === 'mm' ? 0 : 0)}<span class="spec-unit">${suffix}</span>`;
+  document.getElementById('spec-width').innerHTML   = `${(widthCm * factor).toFixed(unit === 'mm' ? 0 : 0)}<span class="spec-unit">${suffix}</span>`;
+  document.getElementById('spec-breadth').innerHTML = `${(breadthCm * factor).toFixed(unit === 'mm' ? 0 : 0)}<span class="spec-unit">${suffix}</span>`;
+
+  // Toggle active button
+  document.querySelectorAll('.unit-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.unit === unit);
+  });
 }
 
 
